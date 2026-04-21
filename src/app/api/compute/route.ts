@@ -2,29 +2,21 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const { initial, wallet } = await req.json();
+    const { initial, final, wallet } = await req.json();
     
-    if (!initial || !wallet) {
-      return NextResponse.json({ error: "Missing initial amount or wallet" }, { status: 400 });
+    if (!initial || !final || !wallet) {
+      return NextResponse.json({ error: "Missing initial amount, final amount, or wallet" }, { status: 400 });
     }
 
-    // Simulate current value: initial * (1 + random between -10% and +40%)
-    const randomChange = (Math.random() * 0.5) - 0.1; // -0.1 to +0.4
-    const current = initial * (1 + randomChange);
+    // Exact evaluation requested by the user
+    const current = final;
     
-    // Compute PnL
+    // Compute exact mathematical PnL
     const pnl = ((current - initial) / initial) * 100;
     
-    // Generate proof
-    const generateHex = (len: number) => {
-      let result = '0x';
-      const chars = '0123456789abcdef';
-      for (let i = 0; i < len; i++) {
-        result += chars[Math.floor(Math.random() * chars.length)];
-      }
-      return result;
-    }
-    const proof = generateHex(64);
+    // Generate Deterministic Proof
+    const crypto = await import('crypto');
+    const proof = crypto.createHash('sha256').update(`${wallet}${initial}${pnl}`).digest('hex');
 
     // Generate encrypted balance
     const chars = ['█', '▓', '▒', '░', '◉'];
